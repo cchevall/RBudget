@@ -40,3 +40,5 @@ Stack : Vite + Preact + Signals + TypeScript, `vite-plugin-pwa` (hors-ligne), `i
 - **Android** : Chrome → ⋮ → « Installer l'application ».
 
 ⚠️ Les données vivent dans le navigateur du téléphone. Sur iPhone, l'app installée et Safari ont des stockages séparés : utilise toujours l'app installée. Fais des **sauvegardes** régulières (Réglages → Sauvegarder), l'app te le rappelle.
+
+Totalement vibe codé, utilisez ça à vos propres risques.
