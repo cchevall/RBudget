@@ -1,6 +1,6 @@
 import { computed, signal } from '@preact/signals'
 import { get, set } from 'idb-keyval'
-import type { AppState, Category, Contribution, EventBudget, Gift, GiftStatus, Goal, ID, Recurring, Transaction, TripItem } from './types'
+import type { AppState, Category, Contribution, EventBudget, Gift, GiftStatus, Goal, ID, Invoice, ProExpense, ProSettings, Recurring, Transaction, TripItem } from './types'
 import { defaultState } from './defaults'
 import { addDays, currentPeriod, periodRange, setCurrency, setStartDay, today, uid } from '../lib/utils'
 import { occurrences } from '../lib/recurring'
@@ -68,7 +68,14 @@ document.addEventListener('visibilitychange', () => document.visibilityState ===
 /** Brings old or partial saves up to the current shape */
 function migrate(s: Partial<AppState>): AppState {
   const d = defaultState()
-  const out = { ...d, ...s, settings: { ...d.settings, ...s.settings }, game: { ...d.game, ...s.game } } as AppState
+  const out = {
+    ...d,
+    ...s,
+    settings: { ...d.settings, ...s.settings },
+    game: { ...d.game, ...s.game },
+    pro: { ...d.pro, ...s.pro, settings: { ...d.pro.settings, ...s.pro?.settings } },
+    immo: { ...d.immo, ...s.immo },
+  } as AppState
   // Add new default categories that may have appeared in later versions
   const ids = new Set(out.categories.map((c) => c.id))
   for (const c of d.categories) if (!ids.has(c.id)) out.categories.push(c)
@@ -243,6 +250,15 @@ export function runRecurrings() {
             })
             posted++
           } else s.pending.push({ id: uid(), recurringId: r.id, date })
+        }
+        if (due.length) r.lastDate = due[due.length - 1]
+      }
+      for (const r of s.pro.recurrings) {
+        if (r.paused) continue
+        const due = occurrences(r, r.lastDate ? addDays(r.lastDate, 1) : r.startDate, t)
+        for (const date of due) {
+          s.pro.expenses.push({ id: uid(), date, label: r.label, amount: r.amount, kind: r.categoryId as ProExpense['kind'], recurringId: r.id, createdAt: Date.now() })
+          posted++
         }
         if (due.length) r.lastDate = due[due.length - 1]
       }
@@ -473,3 +489,70 @@ export function saveCategory(c: Partial<Category> & { name: string; kind: Catego
     else s.categories.push({ emoji: '✨', color: '#e0e0f0', ...c, id: uid() })
   }, { silent: true })
 }
+
+// ---------- Auto-entrepreneur ----------
+
+export const setPro = (patch: Partial<ProSettings>) => update((s) => void Object.assign(s.pro.settings, patch), { silent: true })
+
+export function saveInvoice(i: Omit<Invoice, 'id' | 'createdAt'> & { id?: ID }) {
+  update((s) => {
+    const existing = i.id && s.pro.invoices.find((x) => x.id === i.id)
+    if (existing) Object.assign(existing, i)
+    else s.pro.invoices.push({ ...i, id: uid(), createdAt: Date.now() })
+    learnFx(s, i)
+    checkin(s)
+  })
+}
+
+/** Remembers the last exchange rate actually obtained, to estimate the next invoices */
+function learnFx(s: AppState, i: Pick<Invoice, 'currency' | 'amount' | 'received'>) {
+  const p = s.pro.settings
+  if (i.received && i.amount && i.currency !== 'EUR' && i.currency === p.currency) p.fxRate = Math.round((i.received / i.amount) * 10000) / 10000
+}
+
+export function markInvoicePaid(id: ID, paidAt: string, received: number, declared?: number) {
+  update((s) => {
+    const i = s.pro.invoices.find((x) => x.id === id)
+    if (!i) return
+    Object.assign(i, { paidAt, received, declared: declared && declared !== received ? declared : undefined })
+    learnFx(s, i)
+    checkin(s)
+    gainXp(s, XP.addTx)
+  })
+  fireConfetti()
+}
+
+export function deleteInvoice(id: ID) {
+  const removed = state.value.pro.invoices.find((x) => x.id === id)
+  update((s) => void (s.pro.invoices = s.pro.invoices.filter((x) => x.id !== id)), { silent: true })
+  if (removed) toast('Facture supprimée', '🗑️', { label: 'Annuler', run: () => update((s) => s.pro.invoices.push(removed), { silent: true }) })
+}
+
+export function saveProExpense(e: Omit<ProExpense, 'id' | 'createdAt'> & { id?: ID }) {
+  update((s) => {
+    const existing = e.id && s.pro.expenses.find((x) => x.id === e.id)
+    if (existing) Object.assign(existing, e)
+    else s.pro.expenses.push({ ...e, id: uid(), createdAt: Date.now() })
+    checkin(s)
+  })
+}
+
+export function deleteProExpense(id: ID) {
+  const removed = state.value.pro.expenses.find((x) => x.id === id)
+  update((s) => void (s.pro.expenses = s.pro.expenses.filter((x) => x.id !== id)), { silent: true })
+  if (removed) toast('Dépense supprimée', '🗑️', { label: 'Annuler', run: () => update((s) => s.pro.expenses.push(removed), { silent: true }) })
+}
+
+export function saveProRecurring(r: Omit<Recurring, 'id'> & { id?: ID }) {
+  update((s) => {
+    const existing = r.id && s.pro.recurrings.find((x) => x.id === r.id)
+    if (existing) Object.assign(existing, r)
+    else {
+      const from = s.pro.settings.openingDate
+      s.pro.recurrings.push({ ...r, id: uid(), lastDate: r.startDate < from ? addDays(from, -1) : undefined })
+    }
+  })
+  runRecurrings()
+}
+
+export const deleteProRecurring = (id: ID) => update((s) => void (s.pro.recurrings = s.pro.recurrings.filter((r) => r.id !== id)), { silent: true })

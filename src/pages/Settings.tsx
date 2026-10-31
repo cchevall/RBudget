@@ -56,6 +56,15 @@ export function Settings() {
           <span>Prénom (pour Mochi)</span>
           <input class="input" value={st.name} onChange={(e) => set({ name: e.currentTarget.value.trim() })} />
         </label>
+        <div class="field">
+          <span>Profil</span>
+          <Seg value={st.profile} onChange={(profile) => (set({ profile }), profile === 'ae' && go('/pro/settings'))} options={[['salarie', '💼 Salarié·e'], ['ae', '🧑‍💻 Auto-entrepreneur·e']]} />
+        </div>
+        {st.profile === 'ae' && (
+          <button class="btn ghost block" onClick={() => go('/pro/settings')}>
+            ⚙️ Réglages de mon activité
+          </button>
+        )}
         <label class="field">
           <span>Le mois budgétaire commence le…</span>
           <select class="input" value={st.monthStartDay} onChange={(e) => set({ monthStartDay: Number(e.currentTarget.value) })}>

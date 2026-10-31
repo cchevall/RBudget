@@ -6,6 +6,7 @@ import { favorites, suggestCategories, suggestLabels } from '../lib/autocat'
 import { addDays, centsToInput, currentPeriod, money, parseMoney, today, vibrate } from '../lib/utils'
 import { envelopeStatus } from '../lib/stats'
 import { Bubble, Seg, Sheet, ToggleRow } from './ui'
+import { openPro } from './ProSheets'
 
 /** Open with nothing (new), a prefill, or an existing transaction to edit */
 export const addSheet = signal<{ open: boolean; edit?: Transaction; prefill?: Partial<Transaction> }>({ open: false })
@@ -61,7 +62,7 @@ function AddForm({ edit, prefill, onDone }: { edit?: Transaction; prefill?: Part
   const amount = parseMoney(raw)
 
   const favs = useMemo(() => (type === 'expense' ? favorites(s) : []), [type])
-  const tops = s.categories.filter((c) => c.kind === type && !c.parentId && !c.archived)
+  const tops = s.categories.filter((c) => c.kind === type && !c.parentId && !c.archived && (c.id !== 'remuneration' || s.settings.profile === 'ae'))
   const children = (id: string) => s.categories.filter((c) => c.parentId === id && !c.archived)
   const suggestions = useMemo(() => suggestCategories(s, label).filter((id) => cat(id).kind === type), [label, type])
   const labelHints = useMemo(() => (label.length >= 1 ? suggestLabels(s, label, type).filter((h) => h.label !== label) : []), [label, type])
@@ -152,6 +153,16 @@ function AddForm({ edit, prefill, onDone }: { edit?: Transaction; prefill?: Part
         <button class="btn block mt" disabled={!amount} onClick={() => setStep(2)}>
           Suivant →
         </button>
+        {s.settings.profile === 'ae' && type === 'expense' && (
+          <div class="row mt gap-s">
+            <button class="btn sm ghost grow" onClick={() => (onDone(), openPro({ kind: 'expense', prefill: { amount: amount || undefined } }))}>
+              💼 Dépense pro
+            </button>
+            <button class="btn sm ghost grow" onClick={() => (onDone(), openPro({ kind: 'invoice' }))}>
+              🧾 Facture
+            </button>
+          </div>
+        )}
       </div>
     )
 

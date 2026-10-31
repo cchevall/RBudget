@@ -44,7 +44,7 @@ export interface Transaction {
   createdAt: number
 }
 
-export type Frequency = 'weekly' | 'monthly' | 'quarterly' | 'yearly'
+export type Frequency = 'weekly' | 'biweekly' | 'monthly' | 'quarterly' | 'yearly'
 
 export interface Recurring {
   id: ID
@@ -163,6 +163,106 @@ export interface GameState {
   flags: Record<string, number>
 }
 
+// ---------- Auto-entrepreneur ----------
+
+export type Profile = 'salarie' | 'ae'
+export type ProActivity = 'bnc' | 'bic-services' | 'bic-vente'
+export type ProKind = 'urssaf' | 'cfe' | 'banque' | 'assurance' | 'logiciels' | 'materiel' | 'deplacement' | 'formation' | 'comptable' | 'impots' | 'autre'
+
+export interface ProSettings {
+  activity: ProActivity
+  /** Rates in % of the cashed-in turnover (micro regime) */
+  urssafRate: number
+  cfpRate: number
+  /** Versement libératoire de l'impôt sur le revenu */
+  vl: boolean
+  vlRate: number
+  /** Flat allowance used for the taxable income in micro (34% BNC) */
+  abattement: number
+  declaration: 'monthly' | 'quarterly'
+  /** Switch to the "réel" regime on that date (micro before) */
+  reelFrom?: DateStr
+  /** Rough social contributions at réel, in % of (turnover - expenses) */
+  reelRate: number
+  ceiling: Cents
+  tvaThreshold: Cents
+  /** Only foreign B2B clients: services are outside French VAT */
+  foreignClients: boolean
+  client: string
+  /** Invoicing currency and its estimated value in EUR (learnt from payments) */
+  currency: string
+  fxRate: number
+  invoiceAmount: Cents
+  /** Pro account balance on `openingDate`: the treasury is computed from there */
+  openingBalance: Cents
+  openingDate: DateStr
+  /** Estimated yearly CFE, kept aside until paid */
+  cfe: Cents
+  /** Household withholding tax rate (%), used to estimate income tax */
+  pasRate: number
+  /** Money always left on the pro account */
+  cushion: Cents
+  bank: string
+}
+
+export interface Invoice {
+  id: ID
+  number: string
+  client: string
+  date: DateStr
+  currency: string
+  /** In the invoice currency */
+  amount: Cents
+  paidAt?: DateStr
+  /** EUR actually credited on the pro account */
+  received?: Cents
+  /** EUR declared to the URSSAF (defaults to received) */
+  declared?: Cents
+  note?: string
+  createdAt: number
+}
+
+export interface ProExpense {
+  id: ID
+  date: DateStr
+  label: string
+  amount: Cents
+  kind: ProKind
+  /** URSSAF payment: the declaration period it settles (YYYY-MM or YYYY-Tn) */
+  urssafPeriod?: string
+  recurringId?: ID
+  note?: string
+  createdAt: number
+}
+
+export interface ProState {
+  settings: ProSettings
+  invoices: Invoice[]
+  expenses: ProExpense[]
+  /** Fixed pro charges; `categoryId` holds a ProKind */
+  recurrings: Recurring[]
+}
+
+export interface ImmoSettings {
+  /** Net monthly income retained by the bank (0 = estimated from the app) */
+  income: Cents
+  coIncome: Cents
+  /** Monthly loan payments that will still run after the purchase */
+  credits: Cents
+  maxDebt: number
+  rate: number
+  years: number
+  savings: Cents
+  monthlySavings: Cents
+  coSavings: Cents
+  sell: boolean
+  saleValue: Cents
+  /** Remaining capital on the current mortgage and capital repaid each month */
+  crd: Cents
+  crdMonthly: Cents
+  targetDate: DateStr
+}
+
 export type ThemeName = 'fraise' | 'menthe' | 'lavande' | 'peche' | 'citron'
 
 export interface Settings {
@@ -175,6 +275,7 @@ export interface Settings {
   lastBackup?: number
   onboarded: boolean
   sounds: boolean
+  profile: Profile
 }
 
 export interface AppState {
@@ -189,4 +290,6 @@ export interface AppState {
   events: EventBudget[]
   rules: Rule[]
   game: GameState
+  pro: ProState
+  immo: ImmoSettings
 }

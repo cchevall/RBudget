@@ -21,6 +21,11 @@ import { Import } from './pages/Import'
 import { Settings } from './pages/Settings'
 import { More } from './pages/More'
 import { Onboarding } from './pages/Onboarding'
+import { ProHome } from './pages/Pro'
+import { ProExpenses, ProInvoices, ProUrssaf, ProYear } from './pages/ProLists'
+import { ProSettingsPage } from './pages/ProSettings'
+import { Immo } from './pages/Immo'
+import { ProSheets } from './components/ProSheets'
 
 function useTheme() {
   const { theme, dark } = state.value.settings
@@ -75,6 +80,10 @@ function Page() {
       return <Settings />
     case 'more':
       return <More />
+    case 'pro':
+      return b === 'invoices' ? <ProInvoices /> : b === 'expenses' ? <ProExpenses /> : b === 'urssaf' ? <ProUrssaf /> : b === 'year' ? <ProYear /> : b === 'settings' ? <ProSettingsPage /> : <ProHome />
+    case 'immo':
+      return <Immo />
     default:
       return <Home />
   }
@@ -82,6 +91,7 @@ function Page() {
 
 function Nav() {
   const p = route.value.path
+  const ae = state.value.settings.profile === 'ae'
   const on = (prefixes: string[]) => prefixes.some((x) => (x === '/' ? p === '/' : p.startsWith(x)))
   const Link = ({ to, ico, label, match }: { to: string; ico: string; label: string; match: string[] }) => (
     <a href={'#' + to} class={on(match) ? 'on' : ''} onClick={() => vibrate(6)}>
@@ -92,12 +102,12 @@ function Nav() {
   return (
     <nav class="nav">
       <Link to="/" ico="🏡" label="Accueil" match={['/']} />
-      <Link to="/tx" ico="🧾" label="Opés" match={['/tx']} />
+      {ae ? <Link to="/pro" ico="💼" label="Pro" match={['/pro']} /> : <Link to="/tx" ico="🧾" label="Opés" match={['/tx']} />}
       <button class="fab" onClick={() => (vibrate(15), openAdd())} aria-label="Ajouter">
         ＋
       </button>
       <Link to="/envelopes" ico="✉️" label="Budgets" match={['/envelopes']} />
-      <Link to="/more" ico="🌸" label="Plus" match={['/more', '/projects', '/goal', '/event', '/health', '/stats', '/coach', '/trophies', '/recurring', '/categories', '/import', '/settings']} />
+      <Link to="/more" ico="🌸" label="Plus" match={['/more', ...(ae ? ['/tx'] : []), '/immo', '/projects', '/goal', '/event', '/health', '/stats', '/coach', '/trophies', '/recurring', '/categories', '/import', '/settings']} />
     </nav>
   )
 }
@@ -168,6 +178,7 @@ export function App() {
       <Page />
       <Nav />
       <AddSheet />
+      <ProSheets />
       <Toasts />
       <XpFloat />
       <Celebrations />

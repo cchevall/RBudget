@@ -10,6 +10,7 @@ import { TxRow } from '../components/common'
 import { Jar } from '../components/charts'
 import { openAdd } from '../components/AddSheet'
 import { go } from '../router'
+import { ProCard } from './Pro'
 
 export function Home() {
   const s = state.value
@@ -80,6 +81,8 @@ export function Home() {
             </div>
           </div>
         </div>
+
+        {s.settings.profile === 'ae' && <ProCard />}
 
         {/* Daily check-in */}
         {!checkedToday && (

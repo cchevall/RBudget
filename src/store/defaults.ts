@@ -1,4 +1,5 @@
-import type { AppState, Category } from './types'
+import type { AppState, Category, ImmoSettings, ProActivity, ProSettings } from './types'
+import { addMonths, today } from '../lib/utils'
 
 const c = (id: string, emoji: string, name: string, color: string, parentId?: string, kind: 'expense' | 'income' = 'expense'): Category => ({
   id,
@@ -12,6 +13,7 @@ const c = (id: string, emoji: string, name: string, color: string, parentId?: st
 export const DEFAULT_CATEGORIES: Category[] = [
   // Revenus
   c('salaire', '💼', 'Salaire', '#9be3c4', undefined, 'income'),
+  c('remuneration', '🧑‍💻', 'Rémunération pro', '#9be3c4', undefined, 'income'),
   c('caf', '👶', 'CAF', '#a8d8ff', undefined, 'income'),
   c('rembours', '💚', 'Remboursements santé', '#b8f0c8', undefined, 'income'),
   c('autres-revenus', '💰', 'Autres revenus', '#ffe08a', undefined, 'income'),
@@ -58,6 +60,7 @@ export const DEFAULT_CATEGORIES: Category[] = [
   c('vacances', '🏖️', 'Vacances', '#a0e0ff'),
 
   // Épargne & divers
+  c('impots', '🧾', 'Impôts', '#ffad9e'),
   c('epargne', '🐷', 'Épargne', '#ffb7cf'),
   c('divers', '✨', 'Divers', '#e0e0f0'),
 ]
@@ -85,8 +88,69 @@ export const BUILTIN_RULES: [string, string][] = [
   ['coiff', 'coiffeuse'], ['esthet', 'estheticienne'], ['ongles', 'estheticienne'], ['epil', 'estheticienne'],
   ['amazon', 'shopping'], ['zara', 'shopping'], ['h m', 'shopping'], ['primark', 'shopping'], ['decathlon', 'shopping'], ['action', 'shopping'],
   ['salaire', 'salaire'], ['paie', 'salaire'], ['caf', 'caf'], ['cpam', 'rembours'], ['ameli', 'rembours'], ['mutuelle', 'rembours'],
+  ['impot', 'impots'], ['dgfip', 'impots'], ['prelevement a la source', 'impots'], ['taxe fonciere', 'impots'],
   ['epargne', 'epargne'], ['livret', 'epargne'],
 ]
+
+/**
+ * Micro-entrepreneur presets (2026). Every value stays editable in the pro settings:
+ * rates change often, check urssaf.fr.
+ */
+export const ACTIVITIES: Record<ProActivity, { label: string; urssaf: number; cfp: number; vl: number; abattement: number; ceiling: number; tva: number }> = {
+  bnc: { label: 'Libéral (BNC)', urssaf: 25.6, cfp: 0.2, vl: 2.2, abattement: 34, ceiling: 8360000, tva: 3750000 },
+  'bic-services': { label: 'Prestations de services (BIC)', urssaf: 21.2, cfp: 0.3, vl: 1.7, abattement: 50, ceiling: 8360000, tva: 3750000 },
+  'bic-vente': { label: 'Vente de marchandises (BIC)', urssaf: 12.3, cfp: 0.1, vl: 1, abattement: 71, ceiling: 20310000, tva: 8500000 },
+}
+
+export function activityDefaults(activity: ProActivity): Partial<ProSettings> {
+  const a = ACTIVITIES[activity]
+  return { activity, urssafRate: a.urssaf, cfpRate: a.cfp, vlRate: a.vl, abattement: a.abattement, ceiling: a.ceiling, tvaThreshold: a.tva }
+}
+
+export function defaultPro(): ProSettings {
+  return {
+    activity: 'bnc',
+    urssafRate: 25.6,
+    cfpRate: 0.2,
+    vl: false,
+    vlRate: 2.2,
+    abattement: 34,
+    declaration: 'monthly',
+    reelRate: 45,
+    ceiling: 8360000,
+    tvaThreshold: 3750000,
+    foreignClients: false,
+    client: '',
+    currency: 'EUR',
+    fxRate: 1,
+    invoiceAmount: 0,
+    openingBalance: 0,
+    openingDate: today(),
+    cfe: 0,
+    pasRate: 0,
+    cushion: 0,
+    bank: '',
+  }
+}
+
+export function defaultImmo(): ImmoSettings {
+  return {
+    income: 0,
+    coIncome: 0,
+    credits: 0,
+    maxDebt: 35,
+    rate: 3.5,
+    years: 25,
+    savings: 0,
+    monthlySavings: 0,
+    coSavings: 0,
+    sell: false,
+    saleValue: 0,
+    crd: 0,
+    crdMonthly: 0,
+    targetDate: addMonths(today(), 24, 1),
+  }
+}
 
 export function defaultState(): AppState {
   return {
@@ -99,6 +163,7 @@ export function defaultState(): AppState {
       dark: 'auto',
       onboarded: false,
       sounds: true,
+      profile: 'salarie',
     },
     categories: DEFAULT_CATEGORIES.map((x) => ({ ...x })),
     transactions: [],
@@ -109,5 +174,7 @@ export function defaultState(): AppState {
     events: [],
     rules: [],
     game: { xp: 0, unlocked: {}, checkins: [], noSpendDays: [], claimedChallenges: [], flags: {} },
+    pro: { settings: defaultPro(), invoices: [], expenses: [], recurrings: [] },
+    immo: defaultImmo(),
   }
 }

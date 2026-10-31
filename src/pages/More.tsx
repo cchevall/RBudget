@@ -9,11 +9,14 @@ export function More() {
   const s = state.value
   const alerts = computeInsights(s).filter((i) => i.level === 'alert' || i.level === 'warn').length
   const reimb = s.transactions.filter((t) => t.reimb && ((t.reimb.secu && !t.reimb.secuAt) || (t.reimb.mutuelle && !t.reimb.mutuelleAt))).length
+  const ae = s.settings.profile === 'ae'
   const tiles: [string, string, string, number?][] = [
+    ...(ae ? ([['🧾', 'Opérations perso', '/tx'], ['💼', 'Mon activité', '/pro']] as [string, string, string][]) : []),
     ['🎯', 'Projets & objectifs', '/projects'],
     ['🎄', 'Noël', s.events.find((e) => e.kind === 'christmas' && !e.archived) ? `/event/${s.events.find((e) => e.kind === 'christmas' && !e.archived)!.id}` : '/projects'],
     ['🏖️', 'Vacances', s.events.find((e) => e.kind === 'trip' && !e.archived) ? `/event/${s.events.find((e) => e.kind === 'trip' && !e.archived)!.id}` : '/projects'],
     ['🩺', 'Santé & remb.', '/health', reimb],
+    ['🏡', 'Projet immo', '/immo'],
     ['📊', 'Statistiques', '/stats'],
     ['🔮', 'Coach IA', '/coach', alerts],
     ['🏆', `Trophées · niv. ${levelOf(s.game.xp).level}`, '/trophies'],

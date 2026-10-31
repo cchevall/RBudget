@@ -3,6 +3,7 @@ import { addDays, addMonths, parseDate } from './utils'
 
 export const FREQ_LABEL: Record<Frequency, string> = {
   weekly: 'Chaque semaine',
+  biweekly: 'Toutes les 2 semaines',
   monthly: 'Chaque mois',
   quarterly: 'Chaque trimestre',
   yearly: 'Chaque année',
@@ -14,6 +15,8 @@ function nth(r: Recurring, n: number): DateStr {
   switch (r.frequency) {
     case 'weekly':
       return addDays(r.startDate, 7 * n)
+    case 'biweekly':
+      return addDays(r.startDate, 14 * n)
     case 'monthly':
       return addMonths(r.startDate, n, day)
     case 'quarterly':
@@ -47,6 +50,8 @@ export function monthlyEquivalent(r: Recurring) {
   switch (r.frequency) {
     case 'weekly':
       return (r.amount * 52) / 12
+    case 'biweekly':
+      return (r.amount * 26) / 12
     case 'monthly':
       return r.amount
     case 'quarterly':

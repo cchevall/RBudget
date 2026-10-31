@@ -5,6 +5,8 @@ Une app de budget perso **kawaii**, en PWA, dont les données restent **uniqueme
 ## Fonctionnalités
 
 - **Saisie éclair** : pavé numérique, favoris en 1 tap, catégorie devinée depuis le libellé (l'app apprend de tes choix), autocomplétion.
+- **Profil salarié ou auto-entrepreneur** (choisi au premier lancement) : pour les AE, un espace **Pro** séparé du perso avec factures (multi-devise, numérotation auto, taux de change appris), déclarations URSSAF mensuelles/trimestrielles pré-calculées, frais et charges fixes pro, CFE, trésorerie et « ce que tu peux te verser », plafonds micro/TVA, passage au réel, aide à la déclaration de revenus et export CSV.
+- **Projet immo** : capacité d'emprunt (taux d'endettement, TAEG, durée), apport projeté, revente du logement actuel et prêt relais.
 - **Récurrentes** : salaire, CAF, crédit voiture, Matmut, Netflix… ajoutées automatiquement ou « à confirmer » si le montant varie (CAF).
 - **Enveloppes** mensuelles par catégorie (avec sous-catégories), report optionnel, projection « à ce rythme », et **assistant** qui les propose depuis tes moyennes.
 - **Reste à vivre** : ce qu'il reste une fois les prélèvements à venir payés, et combien par jour.
